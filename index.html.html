@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>El Fresno - Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --verde: #8DC63F;
+    --verde-oscuro: #34733A;
+    --verde-claro: #C8E89A;
+    --vino: #6B2D3E;
+    --blanco: #FFFFFF;
+    --gris-claro: #F5F5F7;
+    --gris-medio: #E5E5EA;
+    --gris-texto: #3A3A3C;
+    --gris-sub: #8E8E93;
+    --rojo: #FF3B30;
+    --amarillo: #FF9500;
+    --azul: #007AFF;
+    --sombra: 0 4px 20px rgba(0,0,0,0.10);
+    --radio: 16px;
+    --radio-sm: 12px;
+  }
+
+  body {
+    font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif;
+    background: var(--gris-claro);
+    color: var(--gris-texto);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* ─── STATUS BAR ─── */
+  .status-bar {
+    background: var(--verde-oscuro);
+    padding: 14px 20px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-time { color: white; font-weight: 600; font-size: 15px; }
+  .status-icons { color: white; font-size: 13px; display: flex; gap: 6px; align-items: center; }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ─── NAV BAR ─── */
+  .nav-bar {
+    background: var(--verde-oscuro);
+    padding: 12px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-bar .logo-area {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo {
+    width: 36px; height: 36px;
+    background: white;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .nav-title { color: white; font-size: 17px; font-weight: 600; }
+  .nav-sub { color: rgba(255,255,255,0.7); font-size: 11px; }
+  .nav-btn {
+    background: rgba(255,255,255,0.2);
+    border: none; border-radius: 20px;
+    color: white; padding: 6px 14px; font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ─── CONTENT ─── */
+  .content { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+
+  /* ─── HERO CARD ─── */
+  .hero-card {
+    margin: 16px;
+    background: linear-gradient(135deg, var(--verde-oscuro), var(--verde));
+    border-radius: var(--radio);
+    padding: 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '🌿';
+    position: absolute; right: 16px; top: 16px;
+    font-size: 48px; opacity: 0.15;
+  }
+  .hero-greeting { font-size: 13px; opacity: 0.8; }
+  .hero-name { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .hero-date { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+  .hero-stats {
+    display: flex; gap: 16px; margin-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 14px;
+  }
+  .hero-stat { flex: 1; }
+  .hero-stat-val { font-size: 22px; font-weight: 700; }
+  .hero-stat-lbl { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+
+  /* ─── SECTION TITLE ─── */
+  .section-title {
+    padding: 8px 16px 6px;
+    font-size: 13px; font-weight: 600;
+    color: var(--gris-sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* ─── ALERT BANNER ─── */
+  .alert-banner {
+    margin: 0 16px 10px;
+    background: #FFF5F5;
+    border-left: 4px solid var(--rojo);
+    border-radius: var(--radio-sm);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .alert-banner.warning {
+    background: #FFF9F0;
+    border-left-color: var(--amarillo);
+  }
+  .alert-icon { font-size: 20px; }
+  .alert-text { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 600; color: var(--rojo); }
+  .alert-banner.warning .alert-title { color: var(--amarillo); }
+  .alert-sub { font-size: 12px; color: var(--gris-sub); margin-top: 2px; }
+
+  /* ─── KPI GRID ─── */
+  .kpi-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 0 16px 10px;
+  }
+  .kpi-card {
+    background: white; border-radius: var(--radio);
+    padding: 14px; box-shadow: var(--sombra);
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .kpi-card:active { transform: scale(0.97); }
+  .kpi-icon { font-size: 22px; margin-bottom: 8px; }
+  .kpi-val { font-size: 24px; font-weight: 700; color: var(--gris-texto); }
+  .kpi-lbl { font-size: 12px; color: var(--gris-sub); margin-top: 2px; }
+  .kpi-status {
+    display: inline-block; margin-top: 6px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .kpi-status.ok { background: #E8F8E8; color: var(--verde-oscuro); }
+  .kpi-status.warn { background: #FFF3E0; color: #E65100; }
+  .kpi-status.err { background: #FFE8E8; color: var(--rojo); }
+
+  /* ─── MENU LIST ─── */
+  .menu-list { margin: 0 16px 10px; }
+  .menu-item {
+    background: white; border-radius: var(--radio);
+    padding: 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: var(--sombra);
+    text-decoration: none;
+  }
+  .menu-item:active { transform: scale(0.98); background: var(--gris-claro); }
+  .menu-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .menu-icon.verde { background: linear-gradient(135deg, var(--verde-oscuro), var(--verde)); }
+  .menu-icon.vino { background: linear-gradient(135deg, var(--vino), #9B4A5E); }
+  .menu-icon.azul { background: linear-gradient(135deg, #005BB5, var(--azul)); }
+  .menu-icon.naranja { background: linear-gradient(135deg, #E65100, #FF9500); }
+  .menu-icon.gris { background: linear-gradient(135deg, #3A3A3C, #636366); }
+  .menu-text { flex: 1; }
+  .menu-title { font-size: 15px; font-weight: 600; }
+  .menu-sub { font-size: 12px; color: var(--gris-sub); margin-top: 2px; }
+  .menu-arrow { color: var(--gris-sub); font-size: 16px; }
+  .menu-badge {
+    background: var(--rojo); color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+    margin-right: 4px;
+  }
+
+  /* ─── TAB BAR ─── */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--gris-medio);
+    display: flex; justify-content: space-around;
+    padding: 8px 0 20px;
+    z-index: 200;
+  }
+  .tab-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    cursor: pointer; padding: 4px 16px;
+    border-radius: 10px; transition: all 0.15s;
+    background: none; border: none;
+  }
+  .tab-item.active .tab-icon { color: var(--verde-oscuro); }
+  .tab-item.active .tab-label { color: var(--verde-oscuro); font-weight: 600; }
+  .tab-icon { font-size: 22px; color: var(--gris-sub); }
+  .tab-label { font-size: 10px; color: var(--gris-sub); }
+
+  /* ─── PRODUCT LIST ─── */
+  .product-list { margin: 0 16px; }
+  .product-item {
+    background: white; border-radius: var(--radio);
+    padding: 14px; margin-bottom: 8px;
+    box-shadow: var(--sombra);
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .product-item:active { transform: scale(0.98); }
+  .product-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .product-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .product-dot.ok { background: var(--verde); }
+  .product-dot.warn { background: var(--amarillo); }
+  .product-dot.err { background: var(--rojo); }
+  .product-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .product-sku { font-size: 11px; color: var(--gris-sub); }
+  .progress-bar {
+    height: 6px; background: var(--gris-medio);
+    border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+  }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+  .progress-fill.ok { background: linear-gradient(90deg, var(--verde-oscuro), var(--verde)); }
+  .progress-fill.warn { background: linear-gradient(90deg, #E65100, var(--amarillo)); }
+  .progress-fill.err { background: linear-gradient(90deg, #C62828, var(--rojo)); }
+  .product-stats { display: flex; justify-content: space-between; }
+  .product-stat-item { text-align: center; }
+  .product-stat-val { font-size: 15px; font-weight: 700; }
+  .product-stat-lbl { font-size: 10px; color: var(--gris-sub); }
+  .product-location { 
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--gris-sub);
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--gris-medio);
+  }
+
+  /* ─── QR SCANNER ─── */
+  .qr-container {
+    margin: 16px; background: white;
+    border-radius: var(--radio); overflow: hidden;
+    box-shadow: var(--sombra);
+  }
+  .qr-viewfinder {
+    background: #1C1C1E;
+    padding: 30px; display: flex;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    min-height: 260px;
+  }
+  .qr-frame {
+    width: 180px; height: 180px;
+    position: relative;
+  }
+  .qr-frame::before, .qr-frame::after,
+  .qr-frame span::before, .qr-frame span::after {
+    content: ''; position: absolute;
+    width: 30px; height: 30px; border-color: var(--verde); border-style: solid;
+  }
+  .qr-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .qr-frame::after { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .qr-frame span::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .qr-frame span::after { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+  .qr-laser {
+    position: absolute; top: 10px; left: 10px; right: 10px;
+    height: 2px; background: var(--verde);
+    animation: scan 2s linear infinite; box-shadow: 0 0 8px var(--verde);
+  }
+  @keyframes scan {
+    0% { top: 10px; } 50% { top: 160px; } 100% { top: 10px; }
+  }
+  .qr-hint { color: rgba(255,255,255,0.6); font-size: 13px; text-align: center; }
+  .qr-bottom { padding: 16px; }
+
+  /* ─── BIG BUTTON ─── */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--verde-oscuro), var(--verde));
+    color: white; border: none; border-radius: 14px;
+    padding: 16px; width: 100%;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: transform 0.15s;
+    box-shadow: 0 4px 15px rgba(52,115,58,0.4);
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    background: var(--gris-claro); color: var(--gris-texto);
+    border: none; border-radius: 14px;
+    padding: 14px; width: 100%;
+    font-size: 15px; font-weight: 500;
+    cursor: pointer; margin-top: 8px;
+    transition: transform 0.15s;
+  }
+  .btn-secondary:active { transform: scale(0.97); }
+
+  /* ─── SEARCH BAR ─── */
+  .search-bar {
+    margin: 12px 16px;
+    background: white; border-radius: 12px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: var(--sombra);
+  }
+  .search-bar input {
+    border: none; outline: none; flex: 1;
+    font-size: 15px; background: transparent;
+    color: var(--gris-texto);
+  }
+  .search-bar input::placeholder { color: var(--gris-sub); }
+
+  /* ─── PICKING SCREEN ─── */
+  .picking-header {
+    background: white; margin: 16px 16px 8px;
+    border-radius: var(--radio); padding: 16px;
+    box-shadow: var(--sombra);
+  }
+  .picking-folio { font-size: 20px; font-weight: 700; color: var(--verde-oscuro); }
+  .picking-client { font-size: 14px; color: var(--gris-sub); margin-top: 2px; }
+  .picking-progress { margin-top: 12px; }
+  .picking-progress-bar {
+    height: 8px; background: var(--gris-medio);
+    border-radius: 4px; overflow: hidden; margin-bottom: 6px;
+  }
+  .picking-progress-fill {
+    height: 100%; width: 33%;
+    background: linear-gradient(90deg, var(--verde-oscuro), var(--verde));
+    border-radius: 4px;
+  }
+  .picking-progress-text { font-size: 12px; color: var(--gris-sub); }
+
+  .picking-item {
+    background: white; margin: 0 16px 8px;
+    border-radius: var(--radio); padding: 14px;
+    box-shadow: var(--sombra);
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .picking-item.done { background: #F0FFF0; border: 1px solid var(--verde-claro); }
+  .picking-item.done .picking-item-name { color: var(--gris-sub); text-decoration: line-through; }
+  .picking-check {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+    border: 2px solid var(--gris-medio); background: white;
+  }
+  .picking-item.done .picking-check {
+    background: var(--verde); border-color: var(--verde); color: white;
+  }
+  .picking-item-info { flex: 1; }
+  .picking-item-name { font-size: 14px; font-weight: 600; }
+  .picking-item-qty { font-size: 12px; color: var(--gris-sub); margin-top: 2px; }
+  .picking-item-loc {
+    font-size: 11px; color: var(--verde-oscuro);
+    font-weight: 600; margin-top: 4px;
+  }
+
+  /* ─── MAP ─── */
+  .map-container {
+    margin: 16px; background: white;
+    border-radius: var(--radio); overflow: hidden;
+    box-shadow: var(--sombra);
+  }
+  .map-header {
+    background: var(--verde-oscuro); padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .map-header-title { color: white; font-size: 14px; font-weight: 600; }
+  .map-legend { display: flex; gap: 12px; }
+  .map-legend-item { display: flex; align-items: center; gap: 4px; }
+  .map-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .map-legend-txt { color: rgba(255,255,255,0.7); font-size: 10px; }
+  .map-canvas {
+    padding: 20px; background: #FAFFF5;
+    display: grid; grid-template-columns: 1fr;
+    gap: 12px; position: relative;
+  }
+  .map-zone-label {
+    font-size: 10px; font-weight: 700; color: var(--gris-sub);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .map-row { display: flex; gap: 8px; align-items: flex-start; }
+  .map-zone-tag {
+    font-size: 11px; font-weight: 700; color: var(--gris-sub);
+    width: 16px; padding-top: 10px;
+  }
+  .map-stibas { display: flex; gap: 6px; flex-wrap: wrap; }
+  .map-stiba {
+    width: 56px; height: 56px; border-radius: 10px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px; cursor: pointer; transition: transform 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .map-stiba:active { transform: scale(0.93); }
+  .map-stiba.ok { background: linear-gradient(135deg, #E8F8E8, #C8E89A); border: 1.5px solid var(--verde); }
+  .map-stiba.warn { background: linear-gradient(135deg, #FFF8E1, #FFE082); border: 1.5px solid var(--amarillo); }
+  .map-stiba.err { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); border: 1.5px solid var(--rojo); }
+  .map-stiba.empty { background: var(--gris-medio); border: 1.5px dashed #CCC; }
+  .map-stiba.selected { 
+    transform: scale(1.08); 
+    box-shadow: 0 4px 16px rgba(52,115,58,0.4);
+    border: 2px solid var(--verde-oscuro);
+  }
+  .map-stiba-code { font-size: 8px; font-weight: 700; color: var(--gris-texto); text-align: center; }
+  .map-stiba-qty { font-size: 9px; font-weight: 600; color: var(--gris-sub); }
+  .map-stiba-icon { font-size: 16px; }
+
+  .map-detail {
+    margin: 0 16px 10px; background: white;
+    border-radius: var(--radio); padding: 16px;
+    box-shadow: var(--sombra);
+    border-left: 4px solid var(--verde);
+  }
+  .map-detail-title { font-size: 13px; color: var(--gris-sub); margin-bottom: 10px; }
+  .map-detail-product { font-size: 18px; font-weight: 700; color: var(--verde-oscuro); }
+  .map-detail-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px; margin-top: 12px;
+  }
+  .map-detail-stat { text-align: center; background: var(--gris-claro); padding: 8px; border-radius: 10px; }
+  .map-detail-val { font-size: 16px; font-weight: 700; }
+  .map-detail-lbl { font-size: 10px; color: var(--gris-sub); margin-top: 2px; }
+
+  /* ─── RECENT LIST ─── */
+  .recent-item {
+    background: white; border-radius: var(--radio);
+    padding: 14px 16px; margin: 0 16px 8px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--sombra);
+  }
+  .recent-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .recent-icon.entrada { background: #E8F8E8; }
+  .recent-icon.salida { background: #FFF3E0; }
+  .recent-icon.cancel { background: #FFE8E8; }
+  .recent-info { flex: 1; }
+  .recent-title { font-size: 14px; font-weight: 600; }
+  .recent-sub { font-size: 12px; color: var(--gris-sub); margin-top: 2px; }
+  .recent-val { font-size: 14px; font-weight: 700; text-align: right; }
+  .recent-val.pos { color: var(--verde-oscuro); }
+  .recent-val.neg { color: var(--rojo); }
+
+  /* ─── USER BADGE ─── */
+  .user-badge {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: white; font-weight: 700;
+    border: 1.5px solid rgba(255,255,255,0.5);
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .screen.active > * {
+    animation: fadeInUp 0.3s ease forwards;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--verde); display: inline-block;
+    animation: pulse 1.5s ease infinite; margin-right: 5px;
+  }
+
+  /* ─── CHIPS ─── */
+  .chips { display: flex; gap: 8px; padding: 0 16px 10px; overflow-x: auto; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    white-space: nowrap; padding: 6px 14px;
+    border-radius: 20px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; border: none;
+  }
+  .chip.active { background: var(--verde-oscuro); color: white; }
+  .chip.inactive { background: white; color: var(--gris-texto); box-shadow: var(--sombra); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 300;
+    align-items: flex-end; justify-content: center;
+    max-width: 430px; left: 50%; transform: translateX(-50%);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 8px 0 30px; width: 100%;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--gris-medio); margin: 8px auto 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; padding: 0 20px 16px; }
+  .modal-option {
+    padding: 14px 20px; display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: background 0.1s;
+  }
+  .modal-option:active { background: var(--gris-claro); }
+  .modal-option-icon { font-size: 22px; }
+  .modal-option-text { font-size: 16px; }
+
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span class="status-time">10:45</span>
+  <div class="status-icons">
+    <span>●●●●</span>
+    <span>WiFi</span>
+    <span>🔋</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: INICIO / MENÚ PRINCIPAL       -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="nav-bar">
+    <div class="logo-area">
+      <div class="nav-logo">🌿</div>
+      <div>
+        <div class="nav-title">El Fresno</div>
+        <div class="nav-sub">Sistema de Gestión</div>
+      </div>
+    </div>
+    <div class="user-badge">
+      <div class="user-avatar">JD</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Hero -->
+    <div class="hero-card">
+      <div class="hero-greeting">Buenos días,</div>
+      <div class="hero-name">Jorge Dávalos</div>
+      <div class="hero-date"><span class="live-dot"></span>Lunes 10 Feb 2026 · Actualizado ahora</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-val">45,230</div>
+          <div class="hero-stat-lbl">pz en stock</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">15</div>
+          <div class="hero-stat-lbl">pedidos hoy</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">12</div>
+          <div class="hero-stat-lbl">despachados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="section-title">⚠️ Alertas activas</div>
+    <div class="alert-banner" onclick="goTo('screen-inventory')">
+      <span class="alert-icon">🔴</span>
+      <div class="alert-text">
+        <div class="alert-title">Stock crítico: ALB 1kg</div>
+        <div class="alert-sub">Solo 45 pz disponibles · Reordenar YA</div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="alert-banner warning" onclick="goTo('screen-picking')">
+      <span class="alert-icon">🟡</span>
+      <div class="alert-text">
+        <div class="alert-title">Pedido atrasado: PED.00234</div>
+        <div class="alert-sub">4 días pendiente · PANIMEX</div>
+      </div>
+      <span>›</span>
+    </div>
+
+    <!-- Menú principal -->
+    <div class="section-title">Acciones rápidas</div>
+    <div class="menu-list">
+
+      <div class="menu-item" onclick="goTo('screen-scanner')">
+        <div class="menu-icon verde">📱</div>
+        <div class="menu-text">
+          <div class="menu-title">Escanear QR</div>
+          <div class="menu-sub">Picking de pedidos con cámara</div>
+        </div>
+        <span class="menu-badge">3</span>
+        <span class="menu-arrow">›</span>
+      </div>
+
+      <div class="menu-item" onclick="goTo('screen-inventory')">
+        <div class="menu-icon azul">📦</div>
+        <div class="menu-text">
+          <div class="menu-title">Inventario</div>
+          <div class="menu-sub">Consultar stock en tiempo real</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+
+      <div class="menu-item" onclick="goTo('screen-map')">
+        <div class="menu-icon naranja">🗺️</div>
+        <div class="menu-text">
+          <div class="menu-title">Mapa de Bodega</div>
+          <div class="menu-sub">Ver ubicaciones de estibas</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+
+      <div class="menu-item" onclick="goTo('screen-picking')">
+        <div class="menu-icon vino">🚀</div>
+        <div class="menu-text">
+          <div class="menu-title">Picking activo</div>
+          <div class="menu-sub">PED.00235 · En proceso</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+
+      <div class="menu-item" onclick="goTo('screen-movimientos')">
+        <div class="menu-icon gris">📋</div>
+        <div class="menu-text">
+          <div class="menu-title">Movimientos</div>
+          <div class="menu-sub">Historial de entradas y salidas</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item active" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span>
+      <span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-inventory')">
+      <span class="tab-icon">📦</span>
+      <span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-map')">
+      <span class="tab-icon">🗺️</span>
+      <span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: SCANNER QR                    -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-scanner" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="goTo('screen-home')">← Inicio</button>
+    <div style="color:white;font-weight:600;">Escanear QR</div>
+    <div style="width:60px"></div>
+  </div>
+
+  <div class="content">
+    <div style="padding: 16px 16px 0; color: var(--gris-sub); font-size: 13px; text-align: center;">
+      Apunta la cámara al código QR del pedido
+    </div>
+
+    <div class="qr-container">
+      <div class="qr-viewfinder">
+        <div class="qr-frame">
+          <span></span>
+          <div class="qr-laser"></div>
+        </div>
+        <div class="qr-hint">Mantén estable · Auto-detección</div>
+      </div>
+      <div class="qr-bottom">
+        <button class="btn-primary" onclick="simulateScan()">📷 Simular escaneo</button>
+        <button class="btn-secondary" onclick="goTo('screen-picking')">📂 Seleccionar pedido manualmente</button>
+      </div>
+    </div>
+
+    <div class="section-title">Pedidos recientes</div>
+
+    <div class="menu-list">
+      <div class="menu-item" onclick="goTo('screen-picking')">
+        <div class="menu-icon verde">📋</div>
+        <div class="menu-text">
+          <div class="menu-title">PED.00235</div>
+          <div class="menu-sub">DANTIEN 5 · 3 productos · Hoy 09:30</div>
+        </div>
+        <span style="font-size:11px;background:#FFF3E0;color:#E65100;padding:3px 8px;border-radius:10px;font-weight:600;">Pendiente</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon azul">📋</div>
+        <div class="menu-text">
+          <div class="menu-title">PED.00234</div>
+          <div class="menu-sub">PANIMEX · 2 productos · Ayer 14:20</div>
+        </div>
+        <span style="font-size:11px;background:#FFE8E8;color:var(--rojo);padding:3px 8px;border-radius:10px;font-weight:600;">Atrasado</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon gris">📋</div>
+        <div class="menu-text">
+          <div class="menu-title">PED.00233</div>
+          <div class="menu-sub">BAYSIDE 36 · 5 productos · Ayer 11:00</div>
+        </div>
+        <span style="font-size:11px;background:#E8F8E8;color:var(--verde-oscuro);padding:3px 8px;border-radius:10px;font-weight:600;">✓ Listo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item active" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span><span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-inventory')">
+      <span class="tab-icon">📦</span><span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-map')">
+      <span class="tab-icon">🗺️</span><span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: INVENTARIO                    -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-inventory" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="goTo('screen-home')">← Inicio</button>
+    <div style="color:white;font-weight:600;">Inventario</div>
+    <div style="color:white;font-size:13px;"><span class="live-dot"></span>Live</div>
+  </div>
+
+  <div class="content">
+    <!-- KPIs -->
+    <div class="kpi-grid" style="margin-top:14px;">
+      <div class="kpi-card">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-val">45,230</div>
+        <div class="kpi-lbl">Total piezas</div>
+        <span class="kpi-status ok">🟢 Normal</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">⚖️</div>
+        <div class="kpi-val">15,840</div>
+        <div class="kpi-lbl">Total kg granel</div>
+        <span class="kpi-status warn">🟡 Medio</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🔒</div>
+        <div class="kpi-val">8,420</div>
+        <div class="kpi-lbl">Reservado pz</div>
+        <span class="kpi-status ok">12 pedidos</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-val">36,810</div>
+        <div class="kpi-lbl">Disponible pz</div>
+        <span class="kpi-status ok">🟢 Ok</span>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="chips">
+      <button class="chip active">Todos</button>
+      <button class="chip inactive">🟢 OK</button>
+      <button class="chip inactive">🟡 Bajo</button>
+      <button class="chip inactive">🔴 Crítico</button>
+      <button class="chip inactive">📦 Empacado</button>
+      <button class="chip inactive">🌾 Granel</button>
+    </div>
+
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Buscar producto o clave...">
+    </div>
+
+    <!-- Producto crítico -->
+    <div class="product-list">
+
+      <div class="product-item" onclick="showModal('modal-product')">
+        <div class="product-header">
+          <div class="product-dot err"></div>
+          <div class="product-name">Alubia 1kg (ALB1KG)</div>
+          <div class="product-sku">🔴 Crítico</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill err" style="width:12%"></div>
+        </div>
+        <div class="product-stats">
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--rojo)">120</div>
+            <div class="product-stat-lbl">Stock</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--amarillo)">75</div>
+            <div class="product-stat-lbl">Reservado</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--verde-oscuro)">45</div>
+            <div class="product-stat-lbl">Disponible</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val">12%</div>
+            <div class="product-stat-lbl">Capacidad</div>
+          </div>
+        </div>
+        <div class="product-location">
+          📍 Zona Norte · Estiba 3
+        </div>
+      </div>
+
+      <div class="product-item">
+        <div class="product-header">
+          <div class="product-dot warn"></div>
+          <div class="product-name">Frijol Negro 25kg (FRJ25)</div>
+          <div class="product-sku">🟡 Medio</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill warn" style="width:62%"></div>
+        </div>
+        <div class="product-stats">
+          <div class="product-stat-item">
+            <div class="product-stat-val">2,300</div>
+            <div class="product-stat-lbl">Stock (kg)</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--amarillo)">780</div>
+            <div class="product-stat-lbl">Reservado</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--verde-oscuro)">1,520</div>
+            <div class="product-stat-lbl">Disponible</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val">62%</div>
+            <div class="product-stat-lbl">Capacidad</div>
+          </div>
+        </div>
+        <div class="product-location">
+          📍 Zona Sur · Estiba 7-8
+        </div>
+      </div>
+
+      <div class="product-item">
+        <div class="product-header">
+          <div class="product-dot ok"></div>
+          <div class="product-name">Arroz 1kg El Fresno (AR1EF)</div>
+          <div class="product-sku">🟢 Normal</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill ok" style="width:76%"></div>
+        </div>
+        <div class="product-stats">
+          <div class="product-stat-item">
+            <div class="product-stat-val">1,200</div>
+            <div class="product-stat-lbl">Stock (pz)</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--amarillo)">280</div>
+            <div class="product-stat-lbl">Reservado</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--verde-oscuro)">920</div>
+            <div class="product-stat-lbl">Disponible</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val">76%</div>
+            <div class="product-stat-lbl">Capacidad</div>
+          </div>
+        </div>
+        <div class="product-location">
+          📍 Zona Este · Estiba 1-2
+        </div>
+      </div>
+
+      <div class="product-item">
+        <div class="product-header">
+          <div class="product-dot ok"></div>
+          <div class="product-name">Arroz 25kg Schettino (AR25SCHE)</div>
+          <div class="product-sku">🟢 Normal</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill ok" style="width:85%"></div>
+        </div>
+        <div class="product-stats">
+          <div class="product-stat-item">
+            <div class="product-stat-val">890</div>
+            <div class="product-stat-lbl">Stock (pz)</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--amarillo)">120</div>
+            <div class="product-stat-lbl">Reservado</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val" style="color:var(--verde-oscuro)">770</div>
+            <div class="product-stat-lbl">Disponible</div>
+          </div>
+          <div class="product-stat-item">
+            <div class="product-stat-val">85%</div>
+            <div class="product-stat-lbl">Capacidad</div>
+          </div>
+        </div>
+        <div class="product-location">
+          📍 Zona Este · Estiba 4
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span><span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item active">
+      <span class="tab-icon">📦</span><span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-map')">
+      <span class="tab-icon">🗺️</span><span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: MAPA BODEGA                   -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-map" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="goTo('screen-home')">← Inicio</button>
+    <div style="color:white;font-weight:600;">Mapa Bodega</div>
+    <button class="nav-btn" onclick="showModal('modal-map-options')">⚙️</button>
+  </div>
+
+  <div class="content">
+    <div style="padding: 12px 16px 4px; font-size: 13px; color: var(--gris-sub); text-align:center;">
+      Toca cualquier estiba para ver detalles · Arrastra para mover
+    </div>
+
+    <!-- Detalle seleccionado -->
+    <div class="map-detail" id="map-detail">
+      <div class="map-detail-title">📍 Estiba seleccionada</div>
+      <div class="map-detail-product" id="detail-product">AR1EF — Arroz 1kg</div>
+      <div style="font-size:12px;color:var(--gris-sub);margin-top:2px;" id="detail-zone">Zona Este · Estiba 1</div>
+      <div class="map-detail-stats">
+        <div class="map-detail-stat">
+          <div class="map-detail-val" id="detail-stock" style="color:var(--verde-oscuro)">1,200</div>
+          <div class="map-detail-lbl">Stock pz</div>
+        </div>
+        <div class="map-detail-stat">
+          <div class="map-detail-val" id="detail-reservado" style="color:var(--amarillo)">280</div>
+          <div class="map-detail-lbl">Reservado</div>
+        </div>
+        <div class="map-detail-stat">
+          <div class="map-detail-val" id="detail-disponible" style="color:var(--verde)">920</div>
+          <div class="map-detail-lbl">Disponible</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-container">
+      <div class="map-header">
+        <div class="map-header-title">🏭 EMPACADORA EL FRESNO</div>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:var(--verde)"></div><span class="map-legend-txt">OK</span></div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:var(--amarillo)"></div><span class="map-legend-txt">Bajo</span></div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:var(--rojo)"></div><span class="map-legend-txt">Crítico</span></div>
+        </div>
+      </div>
+      <div class="map-canvas">
+
+        <!-- Zona Norte -->
+        <div>
+          <div class="map-zone-label">📍 Zona Norte</div>
+          <div class="map-row">
+            <div class="map-stibas">
+              <div class="map-stiba ok selected" onclick="selectStiba(this,'AR1EF — Arroz 1kg','Zona Norte · Estiba 1','1,200','280','920')">
+                <div class="map-stiba-icon">🌾</div>
+                <div class="map-stiba-code">AR1EF</div>
+                <div class="map-stiba-qty">1.2K pz</div>
+              </div>
+              <div class="map-stiba ok" onclick="selectStiba(this,'AR25SCHE — Arroz 25kg','Zona Norte · Estiba 2','890','120','770')">
+                <div class="map-stiba-icon">🌾</div>
+                <div class="map-stiba-code">AR25SCH</div>
+                <div class="map-stiba-qty">890 pz</div>
+              </div>
+              <div class="map-stiba warn" onclick="selectStiba(this,'FRJ25 — Frijol Negro','Zona Norte · Estiba 3','2,300','780','1,520')">
+                <div class="map-stiba-icon">🫘</div>
+                <div class="map-stiba-code">FRJ25</div>
+                <div class="map-stiba-qty">2.3K kg</div>
+              </div>
+              <div class="map-stiba err" onclick="selectStiba(this,'ALB1KG — Alubia 1kg','Zona Norte · Estiba 4','120','75','45')">
+                <div class="map-stiba-icon">🫘</div>
+                <div class="map-stiba-code">ALB1KG</div>
+                <div class="map-stiba-qty">120 pz</div>
+              </div>
+              <div class="map-stiba ok" onclick="selectStiba(this,'AZC1KG — Azúcar 1kg','Zona Norte · Estiba 5','3,500','400','3,100')">
+                <div class="map-stiba-icon">🍚</div>
+                <div class="map-stiba-code">AZC1KG</div>
+                <div class="map-stiba-qty">3.5K pz</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona Sur -->
+        <div>
+          <div class="map-zone-label">📍 Zona Sur</div>
+          <div class="map-row">
+            <div class="map-stibas">
+              <div class="map-stiba ok" onclick="selectStiba(this,'MP20GRANEL — Maíz 20kg','Zona Sur · Estiba 6','5,600','1,200','4,400')">
+                <div class="map-stiba-icon">🌽</div>
+                <div class="map-stiba-code">MP20GR</div>
+                <div class="map-stiba-qty">5.6K kg</div>
+              </div>
+              <div class="map-stiba warn" onclick="selectStiba(this,'SOY25 — Soya 25kg','Zona Sur · Estiba 7','800','300','500')">
+                <div class="map-stiba-icon">🌱</div>
+                <div class="map-stiba-code">SOY25</div>
+                <div class="map-stiba-qty">800 kg</div>
+              </div>
+              <div class="map-stiba ok" onclick="selectStiba(this,'LEN1KG — Lenteja 1kg','Zona Sur · Estiba 8','2,100','450','1,650')">
+                <div class="map-stiba-icon">🫘</div>
+                <div class="map-stiba-code">LEN1KG</div>
+                <div class="map-stiba-qty">2.1K pz</div>
+              </div>
+              <div class="map-stiba empty">
+                <div class="map-stiba-icon">➕</div>
+                <div class="map-stiba-code">Vacío</div>
+              </div>
+              <div class="map-stiba empty">
+                <div class="map-stiba-icon">➕</div>
+                <div class="map-stiba-code">Vacío</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona Oeste -->
+        <div>
+          <div class="map-zone-label">📍 Zona Oeste</div>
+          <div class="map-row">
+            <div class="map-stibas">
+              <div class="map-stiba ok" onclick="selectStiba(this,'HAB25 — Haba 25kg','Zona Oeste · Estiba 9','1,800','200','1,600')">
+                <div class="map-stiba-icon">🫘</div>
+                <div class="map-stiba-code">HAB25</div>
+                <div class="map-stiba-qty">1.8K kg</div>
+              </div>
+              <div class="map-stiba ok" onclick="selectStiba(this,'GRB1KG — Garbanzo 1kg','Zona Oeste · Estiba 10','2,530','680','1,850')">
+                <div class="map-stiba-icon">🫘</div>
+                <div class="map-stiba-code">GRB1KG</div>
+                <div class="map-stiba-qty">2.5K pz</div>
+              </div>
+              <div class="map-stiba warn" onclick="selectStiba(this,'CHI100G — Chía 100g','Zona Oeste · Estiba 11','450','180','270')">
+                <div class="map-stiba-icon">🌱</div>
+                <div class="map-stiba-code">CHI100</div>
+                <div class="map-stiba-qty">450 pz</div>
+              </div>
+              <div class="map-stiba empty">
+                <div class="map-stiba-icon">➕</div>
+                <div class="map-stiba-code">Vacío</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="padding: 0 16px 8px; font-size: 12px; color: var(--gris-sub); text-align:center;">
+      💡 Las zonas son flexibles · Se actualizan al mover estibas en el sistema
+    </div>
+
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span><span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-inventory')">
+      <span class="tab-icon">📦</span><span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item active">
+      <span class="tab-icon">🗺️</span><span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: PICKING                       -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-picking" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="goTo('screen-home')">← Inicio</button>
+    <div style="color:white;font-weight:600;">Picking</div>
+    <div style="color:white;font-size:13px;">U01</div>
+  </div>
+
+  <div class="content">
+    <div class="picking-header">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div class="picking-folio">PED.00235</div>
+          <div class="picking-client">👤 DANTIEN 5 · Hoy 09:30</div>
+        </div>
+        <span style="font-size:11px;background:#FFF3E0;color:#E65100;padding:4px 10px;border-radius:10px;font-weight:700;">En proceso</span>
+      </div>
+      <div class="picking-progress" style="margin-top:12px;">
+        <div class="picking-progress-bar">
+          <div class="picking-progress-fill"></div>
+        </div>
+        <div class="picking-progress-text" id="picking-progress-text">1 de 3 productos completados</div>
+      </div>
+    </div>
+
+    <div class="section-title">Productos a recoger</div>
+
+    <div class="picking-item done" id="pick-1" onclick="togglePick(1)">
+      <div class="picking-check">✓</div>
+      <div class="picking-item-info">
+        <div class="picking-item-name">Arroz 1kg El Fresno</div>
+        <div class="picking-item-qty">📦 100 piezas · AR1EF</div>
+        <div class="picking-item-loc">📍 Zona Norte · Estiba 1</div>
+      </div>
+      <span>›</span>
+    </div>
+
+    <div class="picking-item" id="pick-2" onclick="togglePick(2)">
+      <div class="picking-check"></div>
+      <div class="picking-item-info">
+        <div class="picking-item-name">Frijol Negro 25kg</div>
+        <div class="picking-item-qty">⚖️ 50 kg · FRJ25</div>
+        <div class="picking-item-loc">📍 Zona Sur · Estiba 7-8</div>
+      </div>
+      <span>›</span>
+    </div>
+
+    <div class="picking-item" id="pick-3" onclick="togglePick(3)">
+      <div class="picking-check"></div>
+      <div class="picking-item-info">
+        <div class="picking-item-name">Alubia 1kg</div>
+        <div class="picking-item-qty">📦 200 piezas · ALB1KG</div>
+        <div class="picking-item-loc" style="color:var(--rojo);">⚠️ Zona Norte · Estiba 4 · Stock bajo</div>
+      </div>
+      <span>›</span>
+    </div>
+
+    <div style="margin: 16px;">
+      <div style="font-size:13px;color:var(--gris-sub);margin-bottom:8px;">👤 Verificador del despacho:</div>
+      <div style="background:white;border-radius:var(--radio);padding:14px;box-shadow:var(--sombra);display:flex;gap:12px;align-items:center;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--gris-medio);display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:15px;">U02 — Griselda</div>
+          <div style="font-size:12px;color:var(--gris-sub);">Verificador asignado</div>
+        </div>
+        <span style="color:var(--verde);font-size:18px;">✓</span>
+      </div>
+    </div>
+
+    <div style="margin: 0 16px 16px;">
+      <button class="btn-primary" onclick="completePicking()">
+        ✅ CONFIRMAR DESPACHO
+      </button>
+      <button class="btn-secondary" onclick="goTo('screen-map')">
+        🗺️ Ver en mapa de bodega
+      </button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span><span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-inventory')">
+      <span class="tab-icon">📦</span><span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-map')">
+      <span class="tab-icon">🗺️</span><span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: MOVIMIENTOS                   -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-movimientos" class="screen">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="goTo('screen-home')">← Inicio</button>
+    <div style="color:white;font-weight:600;">Movimientos</div>
+    <div style="color:white;font-size:13px;">Hoy</div>
+  </div>
+
+  <div class="content">
+    <div style="margin: 14px 16px 10px; background: white; border-radius: var(--radio); padding: 16px; box-shadow: var(--sombra); display:flex; gap:16px;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:var(--verde-oscuro)">+18</div>
+        <div style="font-size:11px;color:var(--gris-sub)">Entradas hoy</div>
+      </div>
+      <div style="width:1px;background:var(--gris-medio)"></div>
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:var(--rojo)">-12</div>
+        <div style="font-size:11px;color:var(--gris-sub)">Salidas hoy</div>
+      </div>
+      <div style="width:1px;background:var(--gris-medio)"></div>
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:var(--gris-texto)">30</div>
+        <div style="font-size:11px;color:var(--gris-sub)">Total movs.</div>
+      </div>
+    </div>
+
+    <div class="section-title">Historial de hoy</div>
+
+    <div class="recent-item">
+      <div class="recent-icon salida">🚀</div>
+      <div class="recent-info">
+        <div class="recent-title">DESP-PED.00233</div>
+        <div class="recent-sub">Salida venta · AR1EF · U01 + U02</div>
+      </div>
+      <div>
+        <div class="recent-val neg">-100 pz</div>
+        <div style="font-size:10px;color:var(--gris-sub);text-align:right;">10:30</div>
+      </div>
+    </div>
+
+    <div class="recent-item">
+      <div class="recent-icon entrada">📦</div>
+      <div class="recent-info">
+        <div class="recent-title">PROD-000028</div>
+        <div class="recent-sub">Entrada producción · MP500EF · U03</div>
+      </div>
+      <div>
+        <div class="recent-val pos">+200 pz</div>
+        <div style="font-size:10px;color:var(--gris-sub);text-align:right;">09:45</div>
+      </div>
+    </div>
+
+    <div class="recent-item">
+      <div class="recent-icon entrada">🌾</div>
+      <div class="recent-info">
+        <div class="recent-title">F.13356</div>
+        <div class="recent-sub">Entrada compra · MP20GRANEL · Proveedor</div>
+      </div>
+      <div>
+        <div class="recent-val pos">+2,000 kg</div>
+        <div style="font-size:10px;color:var(--gris-sub);text-align:right;">09:15</div>
+      </div>
+    </div>
+
+    <div class="recent-item">
+      <div class="recent-icon cancel">❌</div>
+      <div class="recent-info">
+        <div class="recent-title">DESP-PED.00230</div>
+        <div class="recent-sub" style="color:var(--rojo)">CANCELADO · ALB1KG · U04</div>
+      </div>
+      <div>
+        <div class="recent-val" style="color:var(--gris-sub)">0 pz</div>
+        <div style="font-size:10px;color:var(--gris-sub);text-align:right;">08:50</div>
+      </div>
+    </div>
+
+    <div class="recent-item">
+      <div class="recent-icon salida">🚀</div>
+      <div class="recent-info">
+        <div class="recent-title">DESP-PED.00232</div>
+        <div class="recent-sub">Salida venta · FRJ25 · U02 + U01</div>
+      </div>
+      <div>
+        <div class="recent-val neg">-50 kg</div>
+        <div style="font-size:10px;color:var(--gris-sub);text-align:right;">08:30</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-item" onclick="goTo('screen-home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-scanner')">
+      <span class="tab-icon">📱</span><span class="tab-label">Escanear</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-inventory')">
+      <span class="tab-icon">📦</span><span class="tab-label">Inventario</span>
+    </button>
+    <button class="tab-item" onclick="goTo('screen-map')">
+      <span class="tab-icon">🗺️</span><span class="tab-label">Bodega</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ -->
+<!-- MODALS                                -->
+<!-- ══════════════════════════════════════ -->
+
+<div class="modal-overlay" id="modal-product" onclick="hideModal('modal-product')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 Alubia 1kg (ALB1KG)</div>
+    <div style="padding:0 20px 16px;">
+      <div style="background:var(--gris-claro);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gris-medio);">
+          <span style="color:var(--gris-sub);font-size:14px;">Stock total</span>
+          <span style="font-weight:600;">120 pz</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gris-medio);">
+          <span style="color:var(--gris-sub);font-size:14px;">Reservado</span>
+          <span style="font-weight:600;color:var(--amarillo);">75 pz</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gris-medio);">
+          <span style="color:var(--gris-sub);font-size:14px;">Disponible</span>
+          <span style="font-weight:600;color:var(--rojo);">45 pz</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;">
+          <span style="color:var(--gris-sub);font-size:14px;">Ubicación</span>
+          <span style="font-weight:600;">📍 Zona Norte · Est. 4</span>
+        </div>
+      </div>
+      <div style="background:#FFE8E8;border-radius:12px;padding:12px;margin-bottom:12px;">
+        <div style="color:var(--rojo);font-weight:700;font-size:14px;">⚠️ Stock Crítico</div>
+        <div style="color:var(--rojo);font-size:12px;margin-top:4px;">Solo 12% de capacidad. Se recomienda reordenar inmediatamente.</div>
+      </div>
+      <button class="btn-primary" onclick="hideModal('modal-product')">Ver en mapa de bodega</button>
+      <button class="btn-secondary" onclick="hideModal('modal-product')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-map-options" onclick="hideModal('modal-map-options')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Opciones del mapa</div>
+    <div class="modal-option" onclick="hideModal('modal-map-options')">
+      <span class="modal-option-icon">➕</span>
+      <span class="modal-option-text">Agregar nueva estiba</span>
+    </div>
+    <div class="modal-option" onclick="hideModal('modal-map-options')">
+      <span class="modal-option-icon">🔄</span>
+      <span class="modal-option-text">Reorganizar zonas</span>
+    </div>
+    <div class="modal-option" onclick="hideModal('modal-map-options')">
+      <span class="modal-option-icon">📊</span>
+      <span class="modal-option-text">Ver en 3D</span>
+    </div>
+    <div class="modal-option" onclick="hideModal('modal-map-options')">
+      <span class="modal-option-icon">📤</span>
+      <span class="modal-option-text">Exportar mapa</span>
+    </div>
+    <div class="modal-option" onclick="hideModal('modal-map-options')" style="color:var(--gris-sub);">
+      <span class="modal-option-icon">✕</span>
+      <span class="modal-option-text" style="color:var(--gris-sub);">Cancelar</span>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-scan-result" onclick="hideModal('modal-scan-result')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✅ QR Escaneado</div>
+    <div style="padding:0 20px 16px;">
+      <div style="background:var(--gris-claro);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:8px;">📋</div>
+        <div style="font-size:20px;font-weight:700;color:var(--verde-oscuro);">PED.00235</div>
+        <div style="font-size:14px;color:var(--gris-sub);margin-top:4px;">DANTIEN 5 · 3 productos</div>
+      </div>
+      <button class="btn-primary" onclick="hideModal('modal-scan-result');goTo('screen-picking')">
+        🚀 Iniciar Picking
+      </button>
+      <button class="btn-secondary" onclick="hideModal('modal-scan-result')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-success" onclick="hideModal('modal-success')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div style="padding:20px;text-align:center;">
+      <div style="font-size:64px;margin-bottom:12px;">✅</div>
+      <div style="font-size:22px;font-weight:700;color:var(--verde-oscuro);margin-bottom:8px;">¡Despacho Confirmado!</div>
+      <div style="font-size:14px;color:var(--gris-sub);margin-bottom:16px;">PED.00235 · DANTIEN 5<br>Verificado por U02 · Griselda</div>
+      <div style="background:var(--gris-claro);border-radius:12px;padding:14px;margin-bottom:16px;text-align:left;">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+          <span style="color:var(--gris-sub)">Folio</span><span style="font-weight:600;">DESP-PED.00235</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+          <span style="color:var(--gris-sub)">Preparó</span><span style="font-weight:600;">U01 — Jorge</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+          <span style="color:var(--gris-sub)">Verificó</span><span style="font-weight:600;">U02 — Griselda</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+          <span style="color:var(--gris-sub)">Hora</span><span style="font-weight:600;">10:47 am</span>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="hideModal('modal-success');goTo('screen-home')">
+        🏠 Volver al inicio
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- JAVASCRIPT -->
+<script>
+  // Navegación entre pantallas
+  function goTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // Modales
+  function showModal(id) {
+    document.getElementById(id).classList.add('show');
+  }
+  function hideModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  // Simular escaneo QR
+  function simulateScan() {
+    setTimeout(() => showModal('modal-scan-result'), 500);
+  }
+
+  // Seleccionar estiba en mapa
+  function selectStiba(el, product, zone, stock, reservado, disponible) {
+    document.querySelectorAll('.map-stiba').forEach(s => s.classList.remove('selected'));
+    if (!el.classList.contains('empty')) {
+      el.classList.add('selected');
+      document.getElementById('detail-product').textContent = product;
+      document.getElementById('detail-zone').textContent = zone;
+      document.getElementById('detail-stock').textContent = stock;
+      document.getElementById('detail-reservado').textContent = reservado;
+      document.getElementById('detail-disponible').textContent = disponible;
+    }
+  }
+
+  // Toggle picking items
+  let picksCompleted = 1;
+  function togglePick(n) {
+    const item = document.getElementById('pick-' + n);
+    const isDone = item.classList.contains('done');
+    if (isDone) {
+      item.classList.remove('done');
+      picksCompleted = Math.max(0, picksCompleted - 1);
+    } else {
+      item.classList.add('done');
+      picksCompleted = Math.min(3, picksCompleted + 1);
+    }
+    const pct = Math.round((picksCompleted / 3) * 100);
+    document.querySelector('.picking-progress-fill').style.width = pct + '%';
+    document.getElementById('picking-progress-text').textContent = 
+      picksCompleted + ' de 3 productos completados';
+  }
+
+  // Completar picking
+  function completePicking() {
+    if (picksCompleted < 3) {
+      alert('Aún faltan ' + (3 - picksCompleted) + ' productos por recoger');
+      return;
+    }
+    showModal('modal-success');
+  }
+
+  // Chips de filtro
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      this.closest('.chips').querySelectorAll('.chip').forEach(c => {
+        c.classList.remove('active');
+        c.classList.add('inactive');
+      });
+      this.classList.add('active');
+      this.classList.remove('inactive');
+    });
+  });
+
+  // Actualizar hora
+  function updateTime() {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    document.querySelector('.status-time').textContent = h + ':' + m;
+  }
+  updateTime();
+  setInterval(updateTime, 60000);
+</script>
+
+</body>
+</html>
