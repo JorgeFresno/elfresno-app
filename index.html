@@ -8181,16 +8181,10 @@ if (_savedUser) {
 
 if (currentUser) {
   syncData().then(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pedidoQR = params.get('pedido');
-    const movQR    = params.get('mov');
-
-    if (pedidoQR || movQR) {
-      // ... todo el código del banner QR ...
-    }
-
-  }); // ← cierra el .then()
-} // ← cierra el if (currentUser)
+  // Detectar si se abrió desde un QR
+  const params = new URLSearchParams(window.location.search);
+  const pedidoQR = params.get('pedido');
+  const movQR    = params.get('mov');
 
   if (pedidoQR || movQR) {
     // Mostrar banner bonito en lugar de navegar automáticamente
