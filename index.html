@@ -7448,7 +7448,7 @@ async function confirmarImportPedido() {
   cerrarModal('importPedidoOverlay');
   showToast('✅ ' + guardados + ' producto(s) importados al pedido #' + numeroPedido, 'success');
   importPedidoDatos = null;
-  setTimeout(() => sincronizarAgenda(), 1500);
+  setTimeout(() => loadAgenda(), 1500);
 }
 
 // ==========================================
