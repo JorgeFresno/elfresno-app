@@ -2653,7 +2653,7 @@ async function agregarItemCatalogo() {
     valor = clave.trim().toUpperCase();
     // Save to Sheets
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion: 'agregarCatalogo',
@@ -2668,7 +2668,7 @@ async function agregarItemCatalogo() {
     valor = valor.trim().toUpperCase();
     // Save to Sheets
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion: 'agregarCatalogo',
@@ -3256,7 +3256,7 @@ async function cambiarEstadoPedido(folio, nuevoEstado) {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-       
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion: 'cambiarEstadoPedido',
@@ -3278,7 +3278,7 @@ async function cambiarEstadoPedido(folio, nuevoEstado) {
     renderAgenda();
     updateAgendaKPIs();
     showToast('✅ Estado actualizado: ' + nuevoEstado, 'success');
-    await loadAgenda();
+    setTimeout(() => loadAgenda(), 2000);
   } catch(e) {
     showToast('❌ Error al actualizar estado', 'error');
   }
@@ -3399,7 +3399,7 @@ async function confirmarDespacho(folio, conStock, sinStock) {
     await Promise.all([
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-         
+        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           accion: 'despacharPedido',
@@ -3650,7 +3650,7 @@ async function submitNuevoPedido() {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-       
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'nuevoPedidoMultiple', filas })
     });
@@ -4122,7 +4122,7 @@ async function cancelarGrupoMovimientos(docRefEnc) {
         if (!folio) continue;
         try {
           await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',  
+            method: 'POST', mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
               accion: 'cancelar',
@@ -4478,7 +4478,7 @@ async function submitRecepcion() {
 
     try {
       await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',  
+        method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       });
@@ -6047,7 +6047,7 @@ async function guardarProduccion() {
   try {
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-       
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion:           'guardarProduccion',
@@ -6295,7 +6295,7 @@ async function guardarUsuario() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion: esNuevo ? 'agregarUsuario' : 'editarUsuario',
@@ -7435,7 +7435,7 @@ async function confirmarImportPedido() {
     };
     try {
       await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',  
+        method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       });
@@ -7766,7 +7766,7 @@ async function guardarRegistroMantenimiento() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(reg)
     });
@@ -7890,7 +7890,7 @@ async function guardarProgramacion() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
@@ -8129,7 +8129,7 @@ async function cancelarProduccionMaquila(idx) {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'cancelarProduccionMaquila', Acta: acta, Fecha: fecha, Tipo: tipo, Idx: idx })
     });
@@ -8152,7 +8152,7 @@ async function cancelarEntregaMaquila(idx) {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'cancelarEntregaMaquila', Acta: acta, FechaSalida: fecha, Idx: idx })
     });
@@ -8843,7 +8843,7 @@ async function guardarNuevaOrdenMaquila() {
     }
   } catch(e) {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
@@ -9242,7 +9242,7 @@ async function guardarEntradaMaquila() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'guardarRecepcionMaquila', Acta: acta, camiones: [camion] })
     });
@@ -9280,7 +9280,7 @@ async function cancelarEntradaMaquila(idx) {
   // Persistir en Sheets
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         accion:       'cancelarEntradaMaquila',
@@ -9522,7 +9522,7 @@ async function guardarVaciadoMaquila() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'guardarProduccionMaquila', ...prod })
     });
@@ -9596,7 +9596,7 @@ async function guardarAcondicionamientoMaquila() {
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',  
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'guardarProduccionMaquila', ...prod })
     });
@@ -9648,7 +9648,7 @@ async function guardarSalidaMaquila() {
   };
 
   await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',  
+    method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ accion: 'guardarEntregaMaquila', ...salida })
   });
@@ -9687,7 +9687,7 @@ function cambiarEstadoMaquila(folio) {
   const siguiente = estados[(estados.indexOf(actual) + 1) % estados.length];
   if (!confirm('Cambiar ' + folio + ' de "' + actual + '" a "' + siguiente + '"?')) return;
   fetch(APPS_SCRIPT_URL, {
-    method: 'POST',  
+    method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ accion: 'actualizarEstadoMaquila', Acta: folio, Estatus: siguiente })
   }).then(() => {
