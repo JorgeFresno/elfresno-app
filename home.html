@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>El Fresno – Inicio</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
+    .box{max-width:800px;margin:auto;background:#111827;border:1px solid #1f2937;border-radius:16px;padding:20px}
+    button{padding:10px 14px;border-radius:10px;border:none;background:#ef4444;color:white;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Entraste ✔️</h2>
+    <p>La app base está funcionando. Desde aquí recuperamos lo demás con calma.</p>
+    <button onclick="logout()">Salir</button>
+  </div>
+<script>
+  function logout(){
+    localStorage.removeItem('usuario');
+    window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>
