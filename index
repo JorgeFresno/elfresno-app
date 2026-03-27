@@ -7448,7 +7448,7 @@ async function confirmarImportPedido() {
   cerrarModal('importPedidoOverlay');
   showToast('✅ ' + guardados + ' producto(s) importados al pedido #' + numeroPedido, 'success');
   importPedidoDatos = null;
-  setTimeout(() => loadAgenda(), 1500);
+  setTimeout(() => sincronizarAgenda(), 1500);
 }
 
 // ==========================================
@@ -8156,7 +8156,27 @@ async function cancelarEntregaMaquila(idx) {
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ accion: 'cancelarEntregaMaquila', Acta: acta, FechaSalida: fecha, Idx: idx })
     });
-   
+    maqSalidasData[idx]['Estado'] = 'Cancelado';
+    actualizarKpisMaqDet();
+    renderMaqDetTab('salidas');
+    showToast('✅ Entrega cancelada', 'success');
+  } catch(e) {
+    showToast('❌ Error al cancelar', 'error');
+  }
+}
+
+updateDate();
+
+// Verificar sesión guardada
+const _savedUser = localStorage.getItem('fresno_user');
+if (_savedUser) {
+  try {
+    currentUser = JSON.parse(_savedUser);
+    aplicarLogin();
+  } catch(e) {
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+}
 // Si no hay sesión, el loginScreen ya está visible — NO cargar datos aún
 
 if (currentUser) {
@@ -8191,29 +8211,20 @@ if (currentUser) {
       window._qrAccion = () => {
         banner.classList.remove('visible');
         navTo('movimientos');
-        setTimeo maqSalidasData[idx]['Estado'] = 'Cancelado';
-    actualizarKpisMaqDet();
-    renderMaqDetTab('salidas');
-    showToast('✅ Entrega cancelada', 'success');
-  } catch(e) {
-    showToast('❌ Error al cancelar', 'error');
-  }
-}
+        setTimeout(() => {
+          const input = document.getElementById('movSearchInput');
+          if (input) { input.value = folio; renderMovimientos(); }
+          const idx = allMovimientos.findIndex(m => (m['FolioMov']||'') === folio);
+          if (idx >= 0) setTimeout(() => openDetalle(idx), 500);
+        }, 600);
+      };
+    }
 
-updateDate();
-
-// Verificar sesión guardada
-const _savedUser = localStorage.getItem('fresno_user');
-if (_savedUser) {
-  try {
-    currentUser = JSON.parse(_savedUser);
-    aplicarLogin();
-  } catch(e) {
-    document.getElementById('loginScreen').classList.remove('hidden');
-  }
-banner.classList.add('visible');
+    banner.classList.add('visible');
   }
 });
+
+} // end if(currentUser)
 
 // ==========================================
 //  ALFREDO — ASISTENTE IA DE EL FRESNO
