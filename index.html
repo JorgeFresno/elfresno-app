@@ -2138,7 +2138,7 @@
 // ==========================================
 //  CONFIG
 // ==========================================
-const SHEET_ID = '1y8LzAWxYkt6Z109vl6jyswbdFtBGoIJx_nBs-3Ne9ck';
+const SHEET_ID = '1hLO--H6HllBZ9yW0FB0BBvUG3qwrRvI8xr0c0Q96Cyc';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEn7k6E-rXpOVjON3SVzkSjmPlJOW8HEgrXTWXrPn-AYIVC0MH4myP1JPDoi2UfMTuaA/exec';
 
 // ==========================================
@@ -7448,7 +7448,7 @@ async function confirmarImportPedido() {
   cerrarModal('importPedidoOverlay');
   showToast('✅ ' + guardados + ' producto(s) importados al pedido #' + numeroPedido, 'success');
   importPedidoDatos = null;
-  setTimeout(() => loadAgenda(), 1500);
+  setTimeout(() => sincronizarAgenda(), 1500);
 }
 
 // ==========================================
@@ -8005,46 +8005,67 @@ function renderProdVsVentas() {
     const f = parseAnyDate(m['FechaMov']);
     return f && f >= ini && f <= fin;
   });
-  const esProd = m => { const t = String(m['TipoMov']||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); return t === 'entrada produccion'; };
-  console.log('PVV movsMes:', movsMes.length, 'allMovs:', (allMovimientosCompletos||[]).length);
-  console.log('Tipos en mes:', [...new Set(movsMes.map(m=>m['TipoMov']))]);
-  const pzProd = movsMes.filter(esProd).reduce((s,m)=>s+(parseFloat(m['CantidadPz'])||0),0);
-  const kgProd = movsMes.filter(esProd).reduce((s,m)=>s+(parseFloat(m['CantidadKg'])||0),0);
-  const pzVend = movsMes.filter(m=>SALIDAS.includes(String(m['TipoMov']||'')))
-    .reduce((s,m)=>s+(parseFloat(m['CantidadPz'])||0),0);
-  const kgVend = movsMes.filter(m=>SALIDAS.includes(String(m['TipoMov']||'')))
-    .reduce((s,m)=>s+(parseFloat(m['CantidadKg'])||0),0);
+
+  // EMPACADO
+  const esEntradaProd = m => { const t = String(m['TipoMov']||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); return t === 'entrada produccion'; };
+  const pzProd = movsMes.filter(esEntradaProd).reduce((s,m)=>s+(parseFloat(m['CantidadPz'])||0),0);
+  const pzVend = movsMes.filter(m=>SALIDAS.includes(String(m['TipoMov']||''))).reduce((s,m)=>s+(parseFloat(m['CantidadPz'])||0),0);
   const pzComp = Object.values(pedidosAgrupados||{})
     .filter(p=>['Pendiente','EnProduccion','Completo'].includes(p.estado))
     .reduce((s,p)=>s+(p.lineas||[]).reduce((ss,l)=>ss+(l.cantPz||0),0),0);
-  const kgComp = Object.values(pedidosAgrupados||{})
-    .filter(p=>['Pendiente','EnProduccion','Completo'].includes(p.estado))
-    .reduce((s,p)=>s+(p.lineas||[]).reduce((ss,l)=>ss+(l.cantKg||0),0),0);
 
-  function barra(label, prod, vend, comp, unidad) {
+  // GRANEL — 3 métricas independientes
+  const esEntradaGranel = m => ['Entrada compra','Entrada devolución'].includes(String(m['TipoMov']||'').trim());
+  const esSalidaProd    = m => String(m['TipoMov']||'').trim() === 'Salida a producción';
+  const esVentaGranel   = m => SALIDAS.includes(String(m['TipoMov']||'').trim()) && (parseFloat(m['CantidadKg'])||0) > 0 && (parseFloat(m['CantidadPz'])||0) === 0;
+  const kgEntradas = movsMes.filter(esEntradaGranel).reduce((s,m)=>s+(parseFloat(m['CantidadKg'])||0),0);
+  const kgConsProd = movsMes.filter(esSalidaProd).reduce((s,m)=>s+(parseFloat(m['CantidadKg'])||0),0);
+  const kgVentas   = movsMes.filter(esVentaGranel).reduce((s,m)=>s+(parseFloat(m['CantidadKg'])||0),0);
+
+  function barraEmpacado(label, prod, vend, comp, unidad) {
     if (prod===0&&vend===0&&comp===0) return '';
-    const max = Math.max(prod, vend+comp, 1);
-    const pVend = Math.min(100,Math.round(vend/max*100));
-    const pComp = Math.min(100-pVend,Math.round(comp/max*100));
-    const pProd = Math.min(100,Math.round(prod/max*100));
-    const ocup  = prod>0?Math.round((vend+comp)/prod*100):0;
-    const cOcup = ocup>=90?'#C62828':ocup>=70?'#E65100':'#2D5A1B';
-    const msg   = ocup>=100?'🔴 Sobrevendido':ocup>=90?'🟡 Casi al tope':'🟢 Con margen';
-    return '<div style="margin-bottom:16px;">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
-      '<div style="font-size:12px;font-weight:800;">'+label+'</div>' +
-      '<div style="font-size:11px;font-weight:800;color:'+cOcup+';">'+msg+' · '+ocup+'%</div></div>' +
-      '<div style="font-size:10px;color:#888;margin-bottom:2px;">Producción: '+prod.toLocaleString('es-MX')+' '+unidad+'</div>' +
-      '<div style="background:#eee;border-radius:4px;height:8px;margin-bottom:6px;"><div style="width:'+pProd+'%;background:#2D5A1B;height:8px;border-radius:4px;"></div></div>' +
-      '<div style="font-size:10px;color:#888;margin-bottom:2px;">Despachado: '+vend.toLocaleString('es-MX')+' · Comprometido: '+comp.toLocaleString('es-MX')+' '+unidad+'</div>' +
-      '<div style="background:#eee;border-radius:4px;height:8px;display:flex;">' +
-      '<div style="width:'+pVend+'%;background:#E65100;height:8px;border-radius:4px 0 0 4px;"></div>' +
+    const max=Math.max(prod,vend+comp,1);
+    const pVend=Math.min(100,Math.round(vend/max*100));
+    const pComp=Math.min(100-pVend,Math.round(comp/max*100));
+    const pProd=Math.min(100,Math.round(prod/max*100));
+    const ocup=prod>0?Math.round((vend+comp)/prod*100):0;
+    const cOcup=ocup>=90?'#C62828':ocup>=70?'#E65100':'#2D5A1B';
+    const msg=ocup>=100?'🔴 Sobrevendido':ocup>=90?'🟡 Casi al tope':'🟢 Con margen';
+    return '<div style="margin-bottom:20px;">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'+
+      '<div style="font-size:13px;font-weight:800;">'+label+'</div>'+
+      '<div style="font-size:11px;font-weight:800;color:'+cOcup+';">'+msg+' · '+ocup+'%</div></div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:3px;">🏭 Producción: '+prod.toLocaleString('es-MX')+' '+unidad+'</div>'+
+      '<div style="background:#eee;border-radius:4px;height:8px;margin-bottom:8px;"><div style="width:'+pProd+'%;background:#2D5A1B;height:8px;border-radius:4px;"></div></div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:3px;">🚀 Despachado: '+vend.toLocaleString('es-MX')+' · Comprometido: '+comp.toLocaleString('es-MX')+' '+unidad+'</div>'+
+      '<div style="background:#eee;border-radius:4px;height:8px;display:flex;">'+
+      '<div style="width:'+pVend+'%;background:#E65100;height:8px;border-radius:4px 0 0 4px;"></div>'+
       '<div style="width:'+pComp+'%;background:#FFB74D;height:8px;border-radius:0 4px 4px 0;"></div></div></div>';
   }
 
-  const html = barra('📦 Piezas empacado',pzProd,pzVend,pzComp,'pz') +
-               barra('⚖️ Granel',kgProd,kgVend,kgComp,'kg');
-  el.innerHTML = html || '<div style="text-align:center;color:#aaa;padding:16px;font-size:12px;">Sin datos de producción este mes</div>';
+  function barraGranel(kgEnt, kgProd, kgVent) {
+    if (kgEnt===0&&kgProd===0&&kgVent===0) return '';
+    const max=Math.max(kgEnt,kgProd,kgVent,1);
+    const filas=[
+      {label:'📥 Entradas granel',    val:kgEnt,  pct:Math.round(kgEnt/max*100),  color:'#1565C0'},
+      {label:'⚙️ Consumo producción', val:kgProd, pct:Math.round(kgProd/max*100), color:'#6A1B9A'},
+      {label:'🚚 Ventas granel',      val:kgVent, pct:Math.round(kgVent/max*100), color:'#E65100'},
+    ];
+    return '<div style="margin-bottom:20px;">'+
+      '<div style="font-size:13px;font-weight:800;margin-bottom:12px;">⚖️ Granel — este mes</div>'+
+      filas.map(f=>
+        '<div style="margin-bottom:10px;">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'+
+        '<span style="font-weight:700;color:#333;">'+f.label+'</span>'+
+        '<span style="font-weight:800;color:'+f.color+';">'+f.val.toLocaleString('es-MX')+' kg</span></div>'+
+        '<div style="background:#eee;border-radius:4px;height:10px;overflow:hidden;">'+
+        '<div style="width:'+f.pct+'%;background:'+f.color+';height:10px;border-radius:4px;"></div></div></div>'
+      ).join('')+'</div>';
+  }
+
+  const html = barraEmpacado('📦 Piezas empacado',pzProd,pzVend,pzComp,'pz') +
+               barraGranel(kgEntradas,kgConsProd,kgVentas);
+  el.innerHTML = html || '<div style="text-align:center;color:#aaa;padding:16px;font-size:12px;">Sin datos este mes</div>';
 }
 
 
@@ -8145,18 +8166,81 @@ async function cancelarProduccionMaquila(idx) {
 async function cancelarEntregaMaquila(idx) {
   const e = maqSalidasData[idx];
   if (!e) return;
-  if (!confirm('¿Cancelar esta entrega?')) return;
+  if (String(e['Estado']||'').trim() === 'Cancelado') { showToast('Ya está cancelada', ''); return; }
+  if (!confirm('¿Cancelar esta entrega? Se marcará como Cancelado en Sheets.')) return;
 
   const acta  = maqDetalleActual?.Folio || '';
   const fecha = e['FechaSalida'] || '';
 
+  // Marcar localmente de inmediato
+  maqSalidasData[idx]['Estado'] = 'Cancelado';
+  actualizarKpisMaqDet();
+  renderMaqDetTab('salidas');
+  showToast('✅ Entrega cancelada', 'success');
+
+  // Persistir en Sheets (fire and forget)
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ accion: 'cancelarEntregaMaquila', Acta: acta, FechaSalida: fecha, Idx: idx })
+  }).catch(err => console.warn('cancelarEntregaMaquila Sheets:', err));
+}
+
+// Borrar entrada (recepción) de la vista local — no afecta inventario Fresno
+function borrarEntradaLocal(idx) {
+  if (!confirm('¿Quitar este camión de la vista? Solo afecta esta pantalla, no el inventario.')) return;
+  maqEntradasData.splice(idx, 1);
+  actualizarKpisMaqDet();
+  renderMaqDetTab('entradas');
+  showToast('Registro quitado de la vista', '');
+}
+
+// Borrar entrega de la vista local — no afecta inventario Fresno
+function borrarEntregaLocal(idx) {
+  if (!confirm('¿Quitar esta entrega de la vista? Solo afecta esta pantalla, no el inventario.')) return;
+  maqSalidasData.splice(idx, 1);
+  actualizarKpisMaqDet();
+  renderMaqDetTab('salidas');
+  showToast('Registro quitado de la vista', '');
+}
+
+// Borrar producción de la vista local
+function borrarProduccionLocal(idx) {
+  if (!confirm('¿Quitar este registro de producción de la vista?')) return;
+  maqProduccionData.splice(idx, 1);
+  actualizarKpisMaqDet();
+  renderMaqDetTab('produccion');
+  showToast('Registro quitado de la vista', '');
+}
+
+// Borrar orden completa de la lista (para pruebas/basura visual)
+function borrarOrdenLocal(folio) {
+  allOrdenesMAQ = allOrdenesMAQ.filter(o => o.Folio !== folio);
+  renderMaquilas();
+  showToast('Orden quitada de la vista', '');
+}
+
+function borrarOrdenPorIdx(idx) {
+  if (idx < 0 || idx >= allOrdenesMAQ.length) return;
+  const folio = allOrdenesMAQ[idx].Folio || '(sin folio)';
+  if (!confirm('¿Quitar "' + folio + '" de la lista? Solo es visual.')) return;
+  allOrdenesMAQ.splice(idx, 1);
+  renderMaquilas();
+  showToast('Orden quitada de la vista', '');
+}
+
+updateDate();
+
+// Verificar sesión guardada
+const _savedUser = localStorage.getItem('fresno_user');
+if (_savedUser) {
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion: 'cancelarEntregaMaquila', Acta: acta, FechaSalida: fecha, Idx: idx })
-    });
-   
+    currentUser = JSON.parse(_savedUser);
+    aplicarLogin();
+  } catch(e) {
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+}
 // Si no hay sesión, el loginScreen ya está visible — NO cargar datos aún
 
 if (currentUser) {
@@ -8191,29 +8275,20 @@ if (currentUser) {
       window._qrAccion = () => {
         banner.classList.remove('visible');
         navTo('movimientos');
-        setTimeo maqSalidasData[idx]['Estado'] = 'Cancelado';
-    actualizarKpisMaqDet();
-    renderMaqDetTab('salidas');
-    showToast('✅ Entrega cancelada', 'success');
-  } catch(e) {
-    showToast('❌ Error al cancelar', 'error');
-  }
-}
+        setTimeout(() => {
+          const input = document.getElementById('movSearchInput');
+          if (input) { input.value = folio; renderMovimientos(); }
+          const idx = allMovimientos.findIndex(m => (m['FolioMov']||'') === folio);
+          if (idx >= 0) setTimeout(() => openDetalle(idx), 500);
+        }, 600);
+      };
+    }
 
-updateDate();
-
-// Verificar sesión guardada
-const _savedUser = localStorage.getItem('fresno_user');
-if (_savedUser) {
-  try {
-    currentUser = JSON.parse(_savedUser);
-    aplicarLogin();
-  } catch(e) {
-    document.getElementById('loginScreen').classList.remove('hidden');
-  }
-banner.classList.add('visible');
+    banner.classList.add('visible');
   }
 });
+
+} // end if(currentUser)
 
 // ==========================================
 //  ALFREDO — ASISTENTE IA DE EL FRESNO
@@ -8412,65 +8487,68 @@ async function enviarAlfredo() {
   const texto = (input.value || '').trim();
   if (!texto) return;
 
-  // Ocultar sugerencias
   const sugs = document.getElementById('alfredoSugerencias');
   if (sugs) sugs.style.display = 'none';
 
-  // Mostrar mensaje usuario
   agregarMensajeAlfredo('user', texto);
   input.value = '';
   input.style.height = 'auto';
 
-  // Deshabilitar botón
   const btn = document.getElementById('alfredoSendBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
 
-  // Mostrar typing
   const typingId = 'alfTyping_' + Date.now();
   agregarBurbuja(`<div class="alf-dots"><span></span><span></span><span></span></div>`, typingId, 'alf-bubble-typing');
 
-  // Agregar al historial
   alfredoHistorial.push({ role: 'user', content: texto });
 
+  let respuesta = '';
   try {
-    let respuesta = '';
-    try {
-      // Usar text/plain evita el preflight CORS en Apps Script
-      const data = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          accion: 'alfredo',
-          token: 'fresno2026alfredo',
-          system: buildContextoFresno(),
-          messages: alfredoHistorial
-        })
-      });
-      const json = await data.json();
-      respuesta = (json.ok && json.data && json.data.texto) ? json.data.texto : 
-                  (json.ok && json.texto) ? json.texto :
-                  ('Error: ' + (json.data?.error || json.error || 'desconocido'));
-    } catch(e2) {
-      respuesta = 'No pude conectarme con Alfredo. Intenta de nuevo.';
+    const sistema = buildContextoFresno();
+    const bodyObj = {
+      accion: 'alfredo',
+      token: 'fresno2026alfredo',
+      system: sistema,
+      messages: alfredoHistorial
+    };
+    const bodyStr = JSON.stringify(bodyObj);
+    console.log('Alfredo payload KB:', Math.round(bodyStr.length / 1024));
+
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: bodyStr
+    });
+
+    console.log('Alfredo resp status:', resp.status, resp.ok);
+
+    if (resp.ok) {
+      const txt = await resp.text();
+      console.log('Alfredo resp text (primeros 200):', txt.substring(0, 200));
+      try {
+        const json = JSON.parse(txt);
+        if (json.ok && json.data?.texto)   respuesta = json.data.texto;
+        else if (json.ok && json.texto)    respuesta = json.texto;
+        else if (json.texto)               respuesta = json.texto;
+        else if (json.data?.error)         respuesta = '⚠️ Error: ' + json.data.error;
+        else                               respuesta = '⚠️ Respuesta inesperada del servidor.';
+      } catch(parseErr) {
+        respuesta = '⚠️ El servidor respondió algo que no pudo parsearse. Revisa la consola.';
+      }
+    } else {
+      respuesta = '⚠️ Error HTTP ' + resp.status + '. Revisa que el Apps Script esté desplegado.';
     }
-
-    // Quitar typing
-    const typingEl = document.getElementById(typingId);
-    if (typingEl) typingEl.closest('.alf-msg').remove();
-
-    // Mostrar respuesta
-    agregarMensajeAlfredo('bot', respuesta);
-    alfredoHistorial.push({ role: 'assistant', content: respuesta });
-
-    // Limitar historial a 20 turnos
-    if (alfredoHistorial.length > 40) alfredoHistorial = alfredoHistorial.slice(-40);
-
   } catch(e) {
-    const typingEl = document.getElementById(typingId);
-    if (typingEl) typingEl.closest('.alf-msg').remove();
-    agregarMensajeAlfredo('bot', '⚠️ No pude conectarme. Verifica tu conexión e intenta de nuevo.');
+    console.error('Alfredo fetch error:', e);
+    respuesta = '⚠️ Error de red: ' + e.message + '. Verifica conexión y que el Apps Script sea público.';
   }
 
+  const typingEl = document.getElementById(typingId);
+  if (typingEl) typingEl.closest('.alf-msg')?.remove();
+
+  agregarMensajeAlfredo('bot', respuesta);
+  alfredoHistorial.push({ role: 'assistant', content: respuesta });
+  if (alfredoHistorial.length > 40) alfredoHistorial = alfredoHistorial.slice(-40);
   if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
 }
 
@@ -8547,9 +8625,17 @@ const MAQ_TIPO_ICON = {
 async function sincronizarMaquilas() {
   const btn = document.querySelector('[onclick="sincronizarMaquilas()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  // Limpiar datos viejos antes de cargar
+  allOrdenesMAQ = [];
+  maqEntradasData = [];
+  maqProduccionData = [];
+  maqSalidasData = [];
+  renderMaquilas(); // mostrar vacío mientras carga
+
   try {
     // Leer Maquilas_Ordenes del mismo Spreadsheet principal
-    const table = await fetchSheet('Maquilas_Ordenes');
+    const table = await fetchSheet('Maquilas_Ordenes', true);
     const fixed = fixFirstHeader(table, 'Acta');
     const rows  = tableToObjects(fixed);
 
@@ -8707,7 +8793,7 @@ function renderMaquilas() {
     return;
   }
 
-  container.innerHTML = filtradas.map(o => {
+  container.innerHTML = filtradas.map((o, idx) => {
     const kgProd  = parseFloat(o.KgProducidos) || 0;
     const kgEnt   = parseFloat(o.KgEntregados) || 0;
     const kgTotal = parseFloat(o.KgTotal) || 0;
@@ -8724,12 +8810,14 @@ function renderMaquilas() {
       'Cancelada':         'maq-estado-Cancelada'
     };
     const estadoClase = estadoColorMap[o.Estado] || 'maq-estado-Activa';
+    // Obtener índice real en allOrdenesMAQ para borrar correctamente
+    const idxReal = allOrdenesMAQ.indexOf(o);
 
     return `
       <div class="maq-orden-card" onclick="abrirDetalleMaquila('${o.Folio}')">
         <div class="maq-orden-header">
           <div class="maq-orden-top">
-            <div class="maq-orden-folio">${o.Folio}</div>
+            <div class="maq-orden-folio">${o.Folio || '(sin folio)'}</div>
             <div class="maq-orden-estado ${estadoClase}">${o.Estado}</div>
           </div>
           <div class="maq-orden-cliente">${o.Cliente}</div>
@@ -8747,6 +8835,7 @@ function renderMaquilas() {
         <div class="maq-orden-footer">
           <button class="maq-btn maq-btn-green" onclick="event.stopPropagation();abrirDetalleMaquila('${o.Folio}')">📋 Detalle</button>
           <button class="maq-btn maq-btn-orange" onclick="event.stopPropagation();cambiarEstadoMaquila('${o.Folio}')">🔄 Estado</button>
+          <button class="maq-btn" data-ridx="${idxReal}" onclick="event.stopPropagation();borrarOrdenPorIdx(parseInt(this.dataset.ridx))" style="background:#F5F5F5;color:#888;">🗑 Quitar</button>
           ${o.URLDrive ? `<button class="maq-btn maq-btn-blue" onclick="event.stopPropagation();window.open('${o.URLDrive}','_blank')">📎 Docs</button>` : ''}
         </div>
       </div>`;
@@ -8788,11 +8877,23 @@ async function guardarNuevaOrdenMaquila() {
   let folioMaestro = actaInput;
   if (!folioMaestro) {
     const year = new Date().getFullYear();
-    const nums = allOrdenesMAQ
-      .map(o => { const m = String(o.Folio).match(/MQ-\d{4}-(\d+)/); return m ? parseInt(m[1]) : 0; })
-      .filter(n => n > 0);
-    const siguiente = nums.length ? Math.max(...nums) + 1 : 1;
-    folioMaestro = 'MQ-' + year + '-' + String(siguiente).padStart(3, '0');
+    // Pedir folios reales desde Sheets (no usar allOrdenesMAQ que puede tener borrados locales)
+    let maxNum = 0;
+    try {
+      const tbl = await fetchSheet('Maquilas_Ordenes', true);
+      const rows = tableToObjects(fixFirstHeader(tbl, 'Acta'));
+      rows.forEach(r => {
+        const m = String(r['Acta']||'').match(/MQ-\d{4}-(\d+)/);
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
+      });
+    } catch(e) {
+      // fallback: usar allOrdenesMAQ
+      allOrdenesMAQ.forEach(o => {
+        const m = String(o.Folio||'').match(/MQ-\d{4}-(\d+)/);
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
+      });
+    }
+    folioMaestro = 'MQ-' + year + '-' + String(maxNum + 1).padStart(3, '0');
   }
 
   const payload = {
@@ -8969,7 +9070,8 @@ function renderMaqDetTab(tab) {
           const cancelado = e._cancelado;
           const botonesHTML = cancelado ? '' :
             '<button data-idx="' + i + '" onclick="imprimirTicketEntradaMaquila(parseInt(this.dataset.idx))" style="background:#E8F5E9;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:#2D5A1B;cursor:pointer;">🖨️</button>' +
-            '<button data-idx="' + i + '" onclick="cancelarEntradaMaquila(parseInt(this.dataset.idx))" style="background:#FDECEA;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:#C62828;cursor:pointer;">✕</button>';
+            '<button data-idx="' + i + '" onclick="cancelarEntradaMaquila(parseInt(this.dataset.idx))" style="background:#FDECEA;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:#C62828;cursor:pointer;">✕</button>' +
+            '<button data-idx="' + i + '" onclick="borrarEntradaLocal(parseInt(this.dataset.idx))" style="background:#F5F5F5;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:#888;cursor:pointer;" title="Borrar de la vista">🗑</button>';
           return `
           <div class="maq-camion-card" style="${cancelado ? 'opacity:0.5;' : ''}">
             <div class="maq-camion-header">
@@ -9064,6 +9166,7 @@ function renderMaqDetTab(tab) {
             '<div style="display:flex;align-items:center;gap:6px;">' +
             '<div class="maq-camion-kg">' + formatNum(kgMostrar) + ' kg</div>' +
             '<button data-pidx="' + idxProd + '" onclick="cancelarProduccionMaquila(parseInt(this.dataset.pidx))" style="background:#FDECEA;border:none;border-radius:6px;padding:3px 8px;font-size:16px;cursor:pointer;color:#C62828;" title="Cancelar">✕</button>' +
+            '<button data-pidx="' + i + '" onclick="borrarProduccionLocal(parseInt(this.dataset.pidx))" style="background:#F5F5F5;border:none;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;color:#888;" title="Borrar de la vista">🗑</button>' +
             '</div></div>' +
             '<div class="maq-camion-detalle">' + detalleHTML + obsHTML + '</div>' +
             '</div>';
@@ -9076,9 +9179,9 @@ function renderMaqDetTab(tab) {
 
   } else if (tab === 'salidas') {
     // Entregas al cliente (Maquilas_Entregas)
-    const totalKgEnt  = maqSalidasData.reduce((s, e) => s + (parseFloat(e['PesoSalida']) || 0), 0);
-    const totalBtsEnt = maqSalidasData.reduce((s, e) => s + (parseFloat(e['Bultos']) || 0), 0);
-    const kgProd      = maqProduccionData.reduce((s, p) => s + (parseFloat(p['KgAcondicionados']) || 0), 0);
+    const salidasOK = maqSalidasData.filter(e => String(e['Estado']||'').trim() !== 'Cancelado');
+    const totalKgEnt  = salidasOK.reduce((s, e) => s + (parseFloat(e['PesoSalida']) || 0), 0);
+    const kgProd      = maqProduccionData.filter(p => String(p['Estado']||'').trim() !== 'Cancelado').reduce((s, p) => s + (parseFloat(p['KgAcondicionados']) || 0), 0);
     const kgPend      = Math.max(0, kgProd - totalKgEnt);
     const pct         = kgProd > 0 ? Math.min(100, Math.round(totalKgEnt / kgProd * 100)) : 0;
 
@@ -9105,15 +9208,16 @@ function renderMaqDetTab(tab) {
       : maqSalidasData.map((e, i) => {
           const canceladoSal = String(e['Estado']||'').trim() === 'Cancelado';
           return `
-          <div class="maq-camion-card" style="${canceladoSal ? 'opacity:0.55;' : ''}">
+          <div class="maq-camion-card" style="${canceladoSal ? 'opacity:0.55;' : ''}" onclick="event.stopPropagation()">
             <div class="maq-camion-header">
               <div class="maq-camion-folio">
                 ${canceladoSal ? '<span style="font-size:10px;background:#FDECEA;color:#C62828;border-radius:6px;padding:2px 7px;font-weight:700;margin-right:4px;">❌ Cancelado</span>' : ''}
                 🚛 Entrega ${i + 1} · ${e['FechaSalida'] || '—'}
               </div>
-              <div style="display:flex;align-items:center;gap:6px;">
+              <div style="display:flex;align-items:center;gap:4px;">
                 <div class="maq-camion-kg">${formatNum(parseFloat(e['PesoSalida']) || 0)} kg</div>
-                <button data-sidx="${i}" onclick="cancelarEntregaMaquila(parseInt(this.dataset.sidx))" style="background:#FDECEA;border:none;border-radius:6px;padding:3px 8px;font-size:16px;cursor:pointer;color:#C62828;" title="Cancelar">✕</button>
+                ${!canceladoSal ? `<button data-sidx="${i}" onclick="event.stopPropagation();cancelarEntregaMaquila(parseInt(this.dataset.sidx))" style="background:#FDECEA;border:none;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;color:#C62828;" title="Cancelar">✕</button>` : ''}
+                <button data-sidx="${i}" onclick="event.stopPropagation();borrarEntregaLocal(parseInt(this.dataset.sidx))" style="background:#F5F5F5;border:none;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;color:#888;" title="Borrar de la vista">🗑</button>
               </div>
             </div>
             <div class="maq-camion-detalle">
@@ -9122,9 +9226,9 @@ function renderMaqDetTab(tab) {
               <div class="maq-camion-item"><div class="maq-camion-label">Bultos</div><div class="maq-camion-val">${e['Bultos'] || '—'}</div></div>
               <div class="maq-camion-item"><div class="maq-camion-label">Remisión</div><div class="maq-camion-val">${e['NumRemision'] || '—'}</div></div>
               <div class="maq-camion-item"><div class="maq-camion-label">Lote</div><div class="maq-camion-val">${e['Lote'] || '—'}</div></div>
-            </div>`;
+            </div>
+          </div>`;
         }).join('');
-
 
     container.innerHTML = saldoHTML + salidasHTML + '<button class="maq-add-btn" onclick="abrirFormSalidaMaquila()">+ Registrar entrega</button>';
     footer.innerHTML = '';
